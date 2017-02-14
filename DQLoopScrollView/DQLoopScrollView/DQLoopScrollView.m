@@ -71,8 +71,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 }
 
 #pragma mark-
-#pragma mark property
-
+#pragma mark setter
 - (void)setTotalPageCount:(NSInteger)totalPageCount
 {
     _totalPageCount = totalPageCount;
@@ -80,7 +79,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     _pageControl.numberOfPages = totalPageCount;
     self.currentPageIndex = _currentPageIndex;
     _pageControl.currentPage = _currentPageIndex;
-
+    
     if (_totalPageCount > 0) {
         [self setNeedsLayout];
     }
@@ -93,13 +92,13 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 - (void)setDelegate:(id<DQLoopScrollViewDelegate>)delegate
 {
     if (_delegate != delegate) {
-    _delegate = delegate;
-    if (self.totalPageCount > 0) {
-          [self setNeedsLayout];
-    }
-    if (!_animationTimer && self.animationDuration > 1 && self.totalPageCount > 1) {
-        [self createTimer];
-        [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
+        _delegate = delegate;
+        if (self.totalPageCount > 0) {
+            [self setNeedsLayout];
+        }
+        if (!_animationTimer && self.animationDuration > 1 && self.totalPageCount > 1) {
+            [self createTimer];
+            [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
         }
     }
 }
@@ -127,7 +126,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 }
 
 #pragma mark-
-#pragma mark configContentView
+#pragma mark configContentViews
 - (void)configContentViews
 {
     if (self.totalPageCount <= 0) return;
@@ -166,7 +165,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 - (NSInteger)getValidNextPageIndexWithPageIndex:(NSInteger)currentPageIndex;
 {
     if(currentPageIndex == -1) {
-      return self.totalPageCount - 1;
+        return self.totalPageCount - 1;
     }
     else if (currentPageIndex == self.totalPageCount) {
         return 0;
@@ -178,7 +177,6 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 
 #pragma mark -
 #pragma mark - UIScrollViewDelegate
-
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
     [self.animationTimer setFireDate:[NSDate distantFuture]];
@@ -193,12 +191,12 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 {
     int contentOffsetX = scrollView.contentOffset.x;
     if(contentOffsetX >= (2 * CGRectGetWidth(scrollView.frame))) {
-      self.currentPageIndex = [self getValidNextPageIndexWithPageIndex:self.currentPageIndex + 1];
+        self.currentPageIndex = [self getValidNextPageIndexWithPageIndex:self.currentPageIndex + 1];
     }
     if(contentOffsetX <= 0) {
         self.currentPageIndex = [self getValidNextPageIndexWithPageIndex:self.currentPageIndex - 1];
     }
-        self.pageControl.currentPage = self.currentPageIndex;
+    self.pageControl.currentPage = self.currentPageIndex;
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
@@ -252,6 +250,16 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     }
 }
 
+#pragma mark- override
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    self.scrollView.frame = self.bounds;
+    _scrollView.contentSize      = CGSizeMake(3 * CGRectGetWidth(self.scrollView.frame), CGRectGetHeight(self.scrollView.frame));
+    _scrollView.contentOffset    = CGPointMake(CGRectGetWidth(_scrollView.frame), 0);
+    [self configContentViews];
+}
+
 - (void)willMoveToWindow:(UIWindow *)newWindow
 {
     if (!newWindow) {
@@ -264,15 +272,6 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
             [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
         }
     }
-}
-
-- (void)layoutSubviews
-{
-    [super layoutSubviews];
-    self.scrollView.frame = self.bounds;
-    _scrollView.contentSize      = CGSizeMake(3 * CGRectGetWidth(self.scrollView.frame), CGRectGetHeight(self.scrollView.frame));
-    _scrollView.contentOffset    = CGPointMake(CGRectGetWidth(_scrollView.frame), 0);
-    [self configContentViews];
 }
 
 @end
