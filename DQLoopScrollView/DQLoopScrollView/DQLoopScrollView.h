@@ -8,10 +8,20 @@
 
 #import <UIKit/UIKit.h>
 
+@interface DQLoopScrollViewItem :UIView
+
+@property (nonatomic,readonly) UIView *  contentView;
+@property (nonatomic,readonly) NSString *  identifier;
+
+- (instancetype)initWithContentView:(UIView *)contentView identifier:(NSString *)identifier;
+
+@end
+
+
 @class DQLoopScrollView;
 @protocol DQLoopScrollViewDelegate <NSObject>
 
-- (UIView *)loopScrollView:(DQLoopScrollView *)loopScrollView contentViewAtIndex:(NSInteger)pageIndex;
+- (DQLoopScrollViewItem *)loopScrollView:(DQLoopScrollView *)loopScrollView contentViewAtIndex:(NSInteger)pageIndex;
 
 @optional
 - (void)loopScrollView:(DQLoopScrollView *)loopScrollView didSelectContentView:(UIView *)contentView atIndex:(NSInteger)pageIndex;
@@ -40,5 +50,6 @@
  */
 - (void)scrollToIndex:(NSInteger)pageIndex;
 
+- (DQLoopScrollViewItem *)dequeueReusableItemWithIdentifier:(NSString *)identifier;
 
 @end
