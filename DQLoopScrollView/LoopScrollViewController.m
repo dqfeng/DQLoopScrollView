@@ -59,12 +59,12 @@
 
 - (void)loopScrollView:(DQLoopScrollView *)loopScrollView didSelectContentView:(UIView *)contentView atIndex:(NSInteger)pageIndex
 {
-    NSLog(@"select:%ld",(long)pageIndex);
+    NSLog(@"select:%@",@(pageIndex));
 }
 
 - (void)loopScrollView:(DQLoopScrollView *)loopScrollView didScrollToContentView:(UIView *)contentView atIndex:(NSInteger)pageIndex
 {
-    NSLog(@"当前页:%ld",(long)pageIndex);
+    NSLog(@"当前页:%@",@(pageIndex));
 }
 
 #pragma mark- action

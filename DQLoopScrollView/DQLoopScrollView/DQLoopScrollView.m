@@ -238,6 +238,24 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     _scrolling = NO;
 }
 
+#pragma mark-
+#pragma mark action
+- (void)animationTimerFired:(NSTimer *)animationTimer
+{
+    CGFloat newOffsetX = CGRectGetWidth(self.scrollView.frame)*2;
+    [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
+}
+
+- (void)contentViewTapAction:(UITapGestureRecognizer *)tap
+{
+    [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
+    BOOL responsToSel = [self.delegate respondsToSelector:@selector(loopScrollView:didSelectContentView:atIndex:)];
+    if (responsToSel) {
+        [self.delegate loopScrollView:self didSelectContentView:tap.view atIndex:self.currentPageIndex];
+    }
+}
+
+#pragma mark- public
 - (void)scrollToIndex:(NSInteger)pageIndex
 {
     
@@ -268,22 +286,6 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     return item;
 }
 
-#pragma mark-
-#pragma mark action
-- (void)animationTimerFired:(NSTimer *)animationTimer
-{
-    CGFloat newOffsetX = CGRectGetWidth(self.scrollView.frame)*2;
-    [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
-}
-
-- (void)contentViewTapAction:(UITapGestureRecognizer *)tap
-{
-    [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
-    BOOL responsToSel = [self.delegate respondsToSelector:@selector(loopScrollView:didSelectContentView:atIndex:)];
-    if (responsToSel) {
-        [self.delegate loopScrollView:self didSelectContentView:tap.view atIndex:self.currentPageIndex];
-    }
-}
 
 #pragma mark- override
 - (void)layoutSubviews
