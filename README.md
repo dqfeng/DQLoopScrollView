@@ -31,9 +31,15 @@ DQLoopScrollView是一个支持循环滚动的轮播视图组件
 //返回每一页的内容视图代理方法 注：必须实现
 - (UIView *)loopScrollView:(DQLoopScrollView *)loopScrollView contentViewAtIndex:(NSInteger)pageIndex
 {
-    UIImageView *imgView = [UIImageView new];
-    //设置图片...
-    return imgView;
+    static NSString * Identifier = @"ImageView";
+    DQLoopScrollViewItem *item = [loopScrollView dequeueReusableItemWithIdentifier:Iden];
+    if (!item) {
+       UIImageView  *view = [[UIImageView alloc] initWithImage:[UIImage imageNamed:self.imageNames[pageIndex]]];
+        item = [[DQLoopScrollViewItem alloc] initWithContentView:view identifier:Iden];
+    }
+    UIImageView *imgView = (UIImageView *)item.contentView;
+    imgView.image = [UIImage imageNamed:self.imageNames[pageIndex]];
+    return item;
 }
 
 //点击某一页触发的代理方法
