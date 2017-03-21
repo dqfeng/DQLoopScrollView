@@ -123,10 +123,8 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     switch (indexPath.row) {
         case 0:
-            self.loopScrollView.infiniteLoopEnable = !self.loopScrollView.infiniteLoopEnable;
             break;
         case 1:
-            self.loopScrollView.animationDuration = self.loopScrollView.animationDuration == -1?3:-1;
             break;
         case 2:
             [self.loopScrollView scrollToIndex:3];
