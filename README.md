@@ -14,10 +14,11 @@ DQLoopScrollView是一个轻量级的支持无限循环滚动的轮播视图组�
 - (void)viewDidLoad 
 {
     [super viewDidLoad];
-    self.title = @"轮播图";
     self.loopScrollView = [[DQLoopScrollView alloc] initWithFrame:CGRectMake(0, 100, [UIScreen mainScreen].bounds.size.width, 200)];
     
     self.loopScrollView.animationDuration = 3;//设置自动滚动的动画时间，当小于0时禁止自动滚动   
+    
+    self.loopScrollView.infiniteLoopEnable = YES;//设置是否支持无限循环滚动
     
     self.loopScrollView.delegate = self;//设置代理
     
