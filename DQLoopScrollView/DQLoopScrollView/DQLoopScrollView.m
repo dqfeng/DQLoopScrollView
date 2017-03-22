@@ -126,26 +126,20 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     CGFloat oldContentOffsetX = [old CGPointValue].x;
     CGFloat contentOffsetX    = [new CGPointValue].x;
     if (oldContentOffsetX == contentOffsetX) return;
-    if (contentOffsetX <= 0 || contentOffsetX >= CGRectGetWidth(self.frame)*2) {
-        if (self.midItem) {
-            self.midItem.hidden = YES;
-            self.reusableQueue[self.midItem.identifier] = self.midItem;
-            self.midItem = nil;
-        }
+    if ((contentOffsetX <= 0 || contentOffsetX >= CGRectGetWidth(self.frame)*2) && self.midItem) {
+        self.midItem.hidden = YES;
+        self.reusableQueue[self.midItem.identifier] = self.midItem;
+        self.midItem = nil;
     }
-    else if (contentOffsetX > CGRectGetWidth(self.frame)){
-        if (self.leftItem) {
-            self.leftItem.hidden = YES;
-            self.reusableQueue[self.leftItem.identifier] = self.leftItem;
-            self.leftItem = nil;
-        }
+    else if (contentOffsetX > CGRectGetWidth(self.frame) && self.leftItem){
+        self.leftItem.hidden = YES;
+        self.reusableQueue[self.leftItem.identifier] = self.leftItem;
+        self.leftItem = nil;
     }
-    else if (contentOffsetX < CGRectGetWidth(self.frame)) {
-        if (self.rightItem) {
-            self.rightItem.hidden = YES;
-            self.reusableQueue[self.rightItem.identifier] = self.rightItem;
-            self.rightItem = nil;
-        }
+    else if (contentOffsetX < CGRectGetWidth(self.frame) && self.rightItem) {
+        self.rightItem.hidden = YES;
+        self.reusableQueue[self.rightItem.identifier] = self.rightItem;
+        self.rightItem = nil;
     }
     
     if (contentOffsetX > CGRectGetWidth(self.scrollView.frame) && contentOffsetX < CGRectGetWidth(self.frame)*2) {
@@ -317,6 +311,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     if (self.totalPageCount > 0) {
         [self setNeedsLayout];
     }
+    
     if (!self.animationTimer && self.animationDuration > 1 && self.totalPageCount > 1) {
         [self startTimer];
     }
@@ -439,9 +434,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     else {
         [self registerObserver];
         if (!_animationTimer && self.animationDuration > 0 && self.totalPageCount > 1) {
-            if (self.totalPageCount > 1) {
-                [self startTimer];
-            }
+            [self startTimer];
         }
     }
 }
