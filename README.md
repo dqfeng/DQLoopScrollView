@@ -1,12 +1,12 @@
 # DQLoopScrollView
 DQLoopScrollView是一个轻量级的支持无限循环滚动的轮播视图组件
 
-##特点
+## 特点
 - 支持设置手动滚动和自动滚动
 - 支持设置是否可以无限循环滚动
 - 无论添加多少页内部实现最多只创建两页
 
-##使用
+## 使用
 
 ```objc
 
@@ -61,12 +61,12 @@ DQLoopScrollView是一个轻量级的支持无限循环滚动的轮播视图组�
 ```
 - 详细使用请参照demo
 
-##安装
+## 安装
 
 将`DQLoopScrollView/`目录下的`DQLoopScrollView.m`/`DQLoopScrollView.h`两个文件拷贝到项目中即可
 
 
-##运行环境
+## 运行环境
 
 - iOS 7+
 - 支持 armv7/armv7s/arm64
