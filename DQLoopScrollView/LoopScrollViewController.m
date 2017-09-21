@@ -69,6 +69,12 @@
     self.trackLabel.text = [NSString stringWithFormat:@"%@/%@",@(self.imageNames.count),@(pageIndex + 1)];
 }
 
+- (void)loopScrollView:(DQLoopScrollView *)loopScrollView willScrollToItem:(DQLoopScrollViewItem *)item atIndex:(NSInteger)pageIndex
+{
+    self.trackLabel.text = [NSString stringWithFormat:@"%@/%@",@(self.imageNames.count),@(pageIndex + 1)];
+}
+
+
 #pragma mark UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -127,7 +133,7 @@
         case 1:
             break;
         case 2:
-            [self.loopScrollView scrollToIndex:3];
+            self.loopScrollView.currentPageIndex = 3;
             break;
         case 3:
             self.imageNames = @[@"third_loopScrollView_test1.jpg"];

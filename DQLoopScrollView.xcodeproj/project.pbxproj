@@ -14,6 +14,7 @@
 		031125881E52177200407AE4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 031125861E52177200407AE4 /* LaunchScreen.storyboard */; };
 		0311259D1E52182100407AE4 /* LoopScrollViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 031125951E52182100407AE4 /* LoopScrollViewController.m */; };
 		031125A41E52194900407AE4 /* DQLoopScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 031125A31E52194900407AE4 /* DQLoopScrollView.m */; };
+		CB18426E1F7395E500D0C3C3 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = CB18426D1F7395E500D0C3C3 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		031125951E52182100407AE4 /* LoopScrollViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LoopScrollViewController.m; sourceTree = "<group>"; };
 		031125A21E52194900407AE4 /* DQLoopScrollView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DQLoopScrollView.h; sourceTree = "<group>"; };
 		031125A31E52194900407AE4 /* DQLoopScrollView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DQLoopScrollView.m; sourceTree = "<group>"; };
+		CB18426D1F7395E500D0C3C3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +47,7 @@
 		0311256C1E52177200407AE4 = {
 			isa = PBXGroup;
 			children = (
+				CB18426D1F7395E500D0C3C3 /* README.md */,
 				031125771E52177200407AE4 /* DQLoopScrollView */,
 				031125761E52177200407AE4 /* Products */,
 			);
@@ -123,7 +126,8 @@
 				TargetAttributes = {
 					031125741E52177200407AE4 = {
 						CreatedOnToolsVersion = 8.2.1;
-						ProvisioningStyle = Automatic;
+						DevelopmentTeam = C6W4HQE6PZ;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -165,6 +169,7 @@
 			files = (
 				0311257D1E52177200407AE4 /* AppDelegate.m in Sources */,
 				031125A41E52194900407AE4 /* DQLoopScrollView.m in Sources */,
+				CB18426E1F7395E500D0C3C3 /* README.md in Sources */,
 				0311259D1E52182100407AE4 /* LoopScrollViewController.m in Sources */,
 				0311257A1E52177200407AE4 /* main.m in Sources */,
 			);
@@ -284,10 +289,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer: Dachuan Yang (W5FBP37YMH)";
+				DEVELOPMENT_TEAM = C6W4HQE6PZ;
 				INFOPLIST_FILE = DQLoopScrollView/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dqfeng.DQLoopScrollView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "c78d9d8d-b4cc-4e2b-bb32-43764e78d09f";
+				PROVISIONING_PROFILE_SPECIFIER = TestAll;
 			};
 			name = Debug;
 		};
@@ -295,10 +304,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer: Dachuan Yang (W5FBP37YMH)";
+				DEVELOPMENT_TEAM = W5FBP37YMH;
 				INFOPLIST_FILE = DQLoopScrollView/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dqfeng.DQLoopScrollView;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "c78d9d8d-b4cc-4e2b-bb32-43764e78d09f";
+				PROVISIONING_PROFILE_SPECIFIER = TestAll;
 			};
 			name = Release;
 		};

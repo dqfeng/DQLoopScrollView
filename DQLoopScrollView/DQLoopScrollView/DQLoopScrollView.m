@@ -32,7 +32,9 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    self.contentView.frame = self.bounds;
+    if (self.contentView.constraints.count <= 0 && CGRectEqualToRect(self.contentView.frame, CGRectZero)) {
+        self.contentView.frame = self.bounds;
+    }
 }
 
 @end
@@ -46,14 +48,15 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 @property (nonatomic,strong) DQLoopScrollViewItem *  leftItem;
 @property (nonatomic,strong) DQLoopScrollViewItem *  midItem;
 @property (nonatomic,strong) DQLoopScrollViewItem *  visibleItem;
-@property (nonatomic,assign) NSInteger               currentPageIndex;
 @property (nonatomic,assign) NSInteger               totalPageCount;
 @property (nonatomic,strong) NSMutableDictionary<NSString *,DQLoopScrollViewItem *> *  reusableQueue;
+@property (nonatomic,assign) BOOL reloadingData;
 
 @end
 
 @implementation DQLoopScrollView
 
+#pragma mark- init
 - (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
@@ -80,21 +83,38 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 
 - (void)commentInit
 {
-    _reusableQueue = @{}.mutableCopy;
-    _scrollView = [UIScrollView new];
-    _scrollView.showsHorizontalScrollIndicator = NO;
-    _scrollView.showsVerticalScrollIndicator   = NO;
-    _scrollView.contentMode      = UIViewContentModeCenter;
-    _scrollView.delegate         = self;
-    _scrollView.pagingEnabled    = YES;
     _infiniteLoopEnable          = YES;
-    _currentPageIndex            = 0;
+    _manualScrollSupport         = YES;
     _animationDuration           = kDQLoopScrollViewAnimationDuration;
-    [self addSubview:_scrollView];
+    [self addSubview:self.scrollView];
+}
+
+#pragma mark- override
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    if (!CGRectEqualToRect(self.bounds, self.scrollView.frame)) {
+        self.scrollView.frame        = self.bounds;
+        [self reloadData];
+    }
+}
+
+- (void)willMoveToWindow:(UIWindow *)newWindow
+{
+    if (!newWindow) {
+        [self stopTimer];
+        [self unregisterObserver];
+    }
+    else {
+        [self registerObserver];
+        if (!_animationTimer && self.animationDuration > 0 && self.totalPageCount > 1) {
+            [self startTimer];
+        }
+    }
 }
 
 #pragma mark -
-#pragma mark - UIScrollViewDelegate
+#pragma mark  UIScrollViewDelegate
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
     [self.animationTimer setFireDate:[NSDate distantFuture]];
@@ -107,20 +127,29 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-    self.currentPageIndex = self.visibleItem.index;
+    _currentPageIndex = self.visibleItem.index;
+    if ([self.delegate respondsToSelector:@selector(loopScrollView:didScrollToItem:atIndex:)]) {
+        [self.delegate loopScrollView:self didScrollToItem:self.visibleItem atIndex:self.visibleItem.index];
+    }
 }
 
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView
 {
     [scrollView setContentOffset:CGPointMake(self.visibleItem.frame.origin.x, 0) animated:NO];
-    self.currentPageIndex = self.visibleItem.index;
+    
+    _currentPageIndex = self.visibleItem.index;
+    if ([self.delegate respondsToSelector:@selector(loopScrollView:didScrollToItem:atIndex:)]) {
+        [self.delegate loopScrollView:self didScrollToItem:self.visibleItem atIndex:self.visibleItem.index];
+    }
 }
 
 #pragma mark-
 #pragma mark action
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if (![keyPath isEqualToString:@"contentOffset"]) return;
+    if (![keyPath isEqualToString:@"contentOffset"] || CGRectEqualToRect(self.scrollView.frame, CGRectZero) || self.reloadingData || self.totalPageCount <= 0) {
+        return;
+    }
     NSValue *old = change[NSKeyValueChangeOldKey];
     NSValue *new = change[NSKeyValueChangeNewKey];
     CGFloat oldContentOffsetX = [old CGPointValue].x;
@@ -140,6 +169,20 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
         self.rightItem.hidden = YES;
         self.reusableQueue[self.rightItem.identifier] = self.rightItem;
         self.rightItem = nil;
+    }
+    
+    if (contentOffsetX == CGRectGetWidth(self.frame) && oldContentOffsetX >=0 && oldContentOffsetX <= CGRectGetWidth(self.frame)*2) {
+        if (self.leftItem) {
+            self.leftItem.hidden = YES;
+            self.reusableQueue[self.leftItem.identifier] = self.leftItem;
+            self.leftItem = nil;
+        }
+        
+        if (self.rightItem) {
+            self.rightItem.hidden = YES;
+            self.reusableQueue[self.rightItem.identifier] = self.rightItem;
+            self.rightItem = nil;
+        }
     }
     
     if (contentOffsetX > CGRectGetWidth(self.scrollView.frame) && contentOffsetX < CGRectGetWidth(self.frame)*2) {
@@ -217,6 +260,11 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     else {
         self.visibleItem = self.rightItem;
     }
+    if ([self.delegate respondsToSelector:@selector(loopScrollView:willScrollToItem:atIndex:)]) {
+        if (contentOffsetX < CGRectGetWidth(self.frame)*2 && contentOffsetX > 0) {
+            [self.delegate loopScrollView:self willScrollToItem:self.visibleItem atIndex:self.visibleItem.index];
+        }
+    }
 }
 
 - (void)timerFiredAction:(NSTimer *)timer
@@ -226,7 +274,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
         [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
     }
     else {
-        [self scrollToIndex:0];
+        self.currentPageIndex = 0;
     }
 }
 
@@ -239,39 +287,30 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 }
 
 #pragma mark- public
-- (void)scrollToIndex:(NSInteger)pageIndex
-{
-    if (pageIndex > self.totalPageCount || pageIndex < 0) return;
-    [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
-    if (pageIndex > self.currentPageIndex) {
-        if (self.visibleItem.index != pageIndex -1) {
-            self.visibleItem.index = pageIndex - 1;
-            self.visibleItem.isInvalidIndex = YES;
-        }
-        CGFloat newOffsetX = CGRectGetWidth(self.scrollView.frame) + self.visibleItem.frame.origin.x;
-        [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
-    }
-    else if (pageIndex < self.currentPageIndex){
-        if (self.visibleItem.index != pageIndex + 1) {
-            self.visibleItem.index = pageIndex + 1;
-            self.visibleItem.isInvalidIndex = YES;
-        }
-        CGFloat newOffsetX =  self.visibleItem.frame.origin.x - CGRectGetWidth(self.scrollView.frame);
-        [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
-    }
-}
-
-- (DQLoopScrollViewItem *)dequeueReusableItemWithIdentifier:(NSString *)identifier
-{
-    DQLoopScrollViewItem *item = self.reusableQueue[identifier];
-    if (item) item.fromReusableQueue = YES;
-    self.reusableQueue[identifier] = nil;
-    return item;
-}
-
 - (void)reloadData
 {
-    [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
+    if (CGRectEqualToRect(self.scrollView.frame, CGRectZero)) {return;}
+    [self stopTimer];
+    self.reloadingData = YES;
+    if ([self.delegate respondsToSelector:@selector(numberOfItemsInLoopScrollView:)]) {
+        self.totalPageCount = [self.delegate numberOfItemsInLoopScrollView:self];
+    }
+    if (self.totalPageCount <= 1) {
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame), CGRectGetHeight(self.frame));
+    }
+    else {
+        if (self.infiniteLoopEnable) {
+            self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame)*3, CGRectGetHeight(self.frame));
+        }
+        else {
+            if (self.totalPageCount == 2) {
+                self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame)*2, CGRectGetHeight(self.frame));
+            }
+            else {
+                self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame)*3, CGRectGetHeight(self.frame));
+            }
+        }
+    }
     self.rightItem = nil;
     self.leftItem  = nil;
     self.midItem   = nil;
@@ -285,36 +324,70 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
         }
     }];
     
+    if (self.totalPageCount <= 0) {
+        if (self.visibleItem) {
+            self.reusableQueue[self.visibleItem.identifier] = self.visibleItem;
+            [self.visibleItem removeFromSuperview];
+            self.visibleItem = nil;
+        }
+        _currentPageIndex = 0;
+        if ([self.delegate respondsToSelector:@selector(loopScrollView:didScrollToItem:atIndex:)]) {
+            [self.delegate loopScrollView:self didScrollToItem:self.visibleItem atIndex:self.currentPageIndex];
+        }
+        self.reloadingData = NO;
+        return;
+    }
+    
+    _currentPageIndex = _currentPageIndex>self.totalPageCount - 1?0:_currentPageIndex;
     if (self.infiniteLoopEnable) {
-        self.midItem = [self configItemWithPageIndex:0 originX:CGRectGetWidth(self.frame)];
+        self.midItem = [self configItemWithPageIndex:self.currentPageIndex originX:CGRectGetWidth(self.frame)];
         if (self.visibleItem) {
             self.reusableQueue[self.visibleItem.identifier] = self.visibleItem;
             self.visibleItem.hidden = YES;
-            self.visibleItem = self.midItem;
         }
+        self.visibleItem = self.midItem;
     }
     else {
-        self.leftItem = [self configItemWithPageIndex:0 originX:0];
+        CGFloat originX = 0;
+        if (self.currentPageIndex == self.totalPageCount - 1 && self.totalPageCount > 2) {
+            originX = CGRectGetWidth(self.frame)*2;
+        }
+        else if (self.currentPageIndex > 0) {
+            originX = CGRectGetWidth(self.frame);
+        }
+        
+        DQLoopScrollViewItem *item = [self configItemWithPageIndex:self.currentPageIndex originX:originX];
+        if (originX == CGRectGetWidth(self.frame)*2) {
+            self.rightItem = item;
+        }
+        else if (originX == 0){
+            self.leftItem = item;
+        }
+        else {
+            self.midItem = item;
+        }
         if (self.visibleItem) {
             self.reusableQueue[self.visibleItem.identifier] = self.visibleItem;
             self.visibleItem.hidden = YES;
-            self.visibleItem = self.leftItem;
         }
+        self.visibleItem = item;
     }
     
-    if ([self.delegate respondsToSelector:@selector(numberOfItemsInLoopScrollView:)]) {
-        self.totalPageCount = [self.delegate numberOfItemsInLoopScrollView:self];
+    CGFloat contentOffsetX       = self.infiniteLoopEnable?CGRectGetWidth(self.frame):self.visibleItem.frame.origin.x;
+    [self.scrollView setContentOffset:CGPointMake(contentOffsetX, 0) animated:NO];
+    if ([self.delegate respondsToSelector:@selector(loopScrollView:didScrollToItem:atIndex:)]) {
+        [self.delegate loopScrollView:self didScrollToItem:self.visibleItem atIndex:self.currentPageIndex];
     }
-    
-    self.currentPageIndex = 0;
-    
-    if (self.totalPageCount > 0) {
-        [self setNeedsLayout];
-    }
-    
-    if (!self.animationTimer && self.animationDuration > 1 && self.totalPageCount > 1) {
-        [self startTimer];
-    }
+    self.reloadingData = NO;
+    [self setAnimationDuration:self.animationDuration];
+}
+
+- (DQLoopScrollViewItem *)dequeueReusableItemWithIdentifier:(NSString *)identifier
+{
+    DQLoopScrollViewItem *item = self.reusableQueue[identifier];
+    if (item) item.fromReusableQueue = YES;
+    self.reusableQueue[identifier] = nil;
+    return item;
 }
 
 #pragma mark- private
@@ -333,7 +406,7 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 
 - (DQLoopScrollViewItem *)configItemWithPageIndex:(NSInteger)index originX:(CGFloat)originX
 {
-    if ([self.delegate respondsToSelector:@selector(loopScrollView:itemAtIndex:)]) {
+    if ([self.delegate respondsToSelector:@selector(loopScrollView:itemAtIndex:)] && index < self.totalPageCount) {
         DQLoopScrollViewItem *item = [self.delegate loopScrollView:self itemAtIndex:index];
         item.frame = CGRectMake(originX, 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame));
         item.hidden = NO;
@@ -352,7 +425,10 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 
 - (void)startTimer
 {
-    _animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationDuration target:self selector:@selector(timerFiredAction:) userInfo:nil repeats:YES];
+    if (self.totalPageCount <= 0 && self.animationDuration <= 0) {return;}
+    if (!_animationTimer) {
+        _animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationDuration target:self selector:@selector(timerFiredAction:) userInfo:nil repeats:YES];
+    }
     [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
 }
 
@@ -377,14 +453,12 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
 - (void)setTotalPageCount:(NSInteger)totalPageCount
 {
     _totalPageCount = totalPageCount;
-    self.scrollView.scrollEnabled = totalPageCount > 1;
 }
 
 - (void)setDelegate:(id<DQLoopScrollViewDelegate>)delegate
 {
     if (_delegate != delegate) {
         _delegate = delegate;
-        [self reloadData];
     }
 }
 
@@ -399,11 +473,33 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     }
 }
 
-- (void)setCurrentPageIndex:(NSInteger)currentPageIndex
+- (void)setCurrentPageIndex:(NSInteger)pageIndex
 {
-    _currentPageIndex = currentPageIndex;
-    if ([self.delegate respondsToSelector:@selector(loopScrollView:didScrollToItem:atIndex:)]) {
-        [self.delegate loopScrollView:self didScrollToItem:self.visibleItem atIndex:self.currentPageIndex];
+    if (CGRectEqualToRect(self.scrollView.frame, CGRectZero)) {
+        _currentPageIndex = pageIndex;
+        return;
+    }
+    if (_currentPageIndex != pageIndex) {
+        NSInteger oldIndex = _currentPageIndex;
+        _currentPageIndex = pageIndex;
+        if (pageIndex > self.totalPageCount || pageIndex < 0) return;
+        [self.animationTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:self.animationDuration]];
+        if (pageIndex > oldIndex) {
+            if (self.visibleItem.index != pageIndex -1) {
+                self.visibleItem.index = pageIndex - 1;
+                self.visibleItem.isInvalidIndex = YES;
+            }
+            CGFloat newOffsetX = CGRectGetWidth(self.scrollView.frame) + self.visibleItem.frame.origin.x;
+            [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
+        }
+        else if (pageIndex < oldIndex){
+            if (self.visibleItem.index != pageIndex + 1) {
+                self.visibleItem.index = pageIndex + 1;
+                self.visibleItem.isInvalidIndex = YES;
+            }
+            CGFloat newOffsetX =  self.visibleItem.frame.origin.x - CGRectGetWidth(self.scrollView.frame);
+            [self.scrollView setContentOffset:CGPointMake(newOffsetX, 0) animated:YES];
+        }
     }
 }
 
@@ -415,28 +511,34 @@ static const CGFloat kDQLoopScrollViewAnimationDuration = -1;
     }
 }
 
-#pragma mark- override
-- (void)layoutSubviews
+- (void)setManualScrollSupport:(BOOL)manualScrollSupport
 {
-    [super layoutSubviews];
-    self.scrollView.frame        = self.bounds;
-    self.scrollView.contentSize  = CGSizeMake((!self.infiniteLoopEnable&&self.totalPageCount == 2?2:3) * CGRectGetWidth(self.frame), CGRectGetHeight(self.frame));
-    CGFloat contentOffsetX       = self.infiniteLoopEnable?CGRectGetWidth(self.frame):0;
-    [self.scrollView setContentOffset:CGPointMake(contentOffsetX, 0) animated:NO];
+    if (_manualScrollSupport != manualScrollSupport) {
+        _manualScrollSupport = manualScrollSupport;
+        self.scrollView.scrollEnabled = manualScrollSupport;
+    }
 }
 
-- (void)willMoveToWindow:(UIWindow *)newWindow
+#pragma mark- getter
+- (UIScrollView *)scrollView
 {
-    if (!newWindow) {
-        [self stopTimer];
-        [self unregisterObserver];
+    if (!_scrollView) {
+        _scrollView = [UIScrollView new];
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.showsVerticalScrollIndicator   = NO;
+        _scrollView.contentMode      = UIViewContentModeCenter;
+        _scrollView.delegate         = self;
+        _scrollView.pagingEnabled    = YES;
     }
-    else {
-        [self registerObserver];
-        if (!_animationTimer && self.animationDuration > 0 && self.totalPageCount > 1) {
-            [self startTimer];
-        }
+    return _scrollView;
+}
+
+- (NSMutableDictionary <NSString *,DQLoopScrollViewItem *>*)reusableQueue
+{
+    if (!_reusableQueue) {
+        _reusableQueue = @{}.mutableCopy;
     }
+    return _reusableQueue;
 }
 
 @end

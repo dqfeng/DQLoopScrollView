@@ -52,6 +52,12 @@ DQLoopScrollView是一个轻量级的支持无限循环滚动的轮播视图组�
     NSLog(@"select:%@",@(pageIndex));
 }
 
+//将要滚动到某一页触发的代理方法
+- (void)loopScrollView:(DQLoopScrollView *)loopScrollView willScrollToItem:(DQLoopScrollViewItem *)item atIndex:(NSInteger)pageIndex
+{
+NSLog(@"将要滚动到:%@页",@(pageIndex));
+}
+
 //已经滚动到某一页触发的代理方法
 - (void)loopScrollView:(DQLoopScrollView *)loopScrollView didScrollToItem:(DQLoopScrollViewItem *)contentView atIndex:(NSInteger)pageIndex
 {
